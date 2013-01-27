@@ -2313,61 +2313,7 @@ void zend_do_label(znode *label TSRMLS_DC) /* {{{ */
 
 void zend_resolve_goto_label(zend_op_array *op_array, zend_op *opline, int pass2 TSRMLS_DC) /* {{{ */
 {
-	zend_label *dest;
-	long current, distance;
-	zval *label;
-
-	if (pass2) {
-		label = opline->op2.zv;
-	} else {
-		label = &CONSTANT_EX(op_array, opline->op2.constant);
-	}
-	if (CG(context).labels == NULL ||
-	    zend_hash_find(CG(context).labels, Z_STRVAL_P(label), Z_STRLEN_P(label)+1, (void**)&dest) == FAILURE) {
-
-		if (pass2) {
-			CG(in_compilation) = 1;
-			CG(active_op_array) = op_array;
-			CG(zend_lineno) = opline->lineno;
-			zend_error(E_COMPILE_ERROR, "'goto' to undefined label '%s'", Z_STRVAL_P(label));
-		} else {
-			/* Label is not defined. Delay to pass 2. */
-			INC_BPC(op_array);
-			return;
-		}
-	}
-
-	opline->op1.opline_num = dest->opline_num;
-	zval_dtor(label);
-	Z_TYPE_P(label) = IS_NULL;
-
-	/* Check that we are not moving into loop or switch */
-	current = opline->extended_value;
-	for (distance = 0; current != dest->brk_cont; distance++) {
-		if (current == -1) {
-			if (pass2) {
-				CG(in_compilation) = 1;
-				CG(active_op_array) = op_array;
-				CG(zend_lineno) = opline->lineno;
-			}
-			zend_error(E_COMPILE_ERROR, "'goto' into loop or switch statement is disallowed");
-		}
-		current = op_array->brk_cont_array[current].parent;
-	}
-
-	if (distance == 0) {
-		/* Nothing to break out of, optimize to ZEND_JMP */
-		opline->opcode = ZEND_JMP;
-		opline->extended_value = 0;
-		SET_UNUSED(opline->op2);
-	} else {
-		/* Set real break distance */
-		ZVAL_LONG(label, distance);
-	}
-
-	if (pass2) {
-		DEC_BPC(op_array);
-	}
+	zend_error(E_COMPILE_ERROR, "Using 'goto' can lead to <a href=\"http://xkcd.com/292/\">Raptor Attacks</a>. Remove all traces of this raptor-bait");
 }
 /* }}} */
 
